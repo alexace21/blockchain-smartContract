@@ -1,34 +1,6 @@
-const pool = require('../config/postgreDatabase');
+const {pool} = require('../config/postgreDatabase');
 // const config = require('../config');
 class Event {
-    static async createTable() {
-        const query = `
-            CREATE TABLE IF NOT EXISTS events (
-                id SERIAL PRIMARY KEY,
-                contract_address VARCHAR(42) NOT NULL,
-                event_name VARCHAR(100) NOT NULL,
-                block_number BIGINT NOT NULL,
-                transaction_hash VARCHAR(66) NOT NULL,
-                log_index INT NOT NULL,
-                block_hash VARCHAR(66) NOT NULL,
-                timestamp BIGINT NOT NULL,
-                sender_address VARCHAR(42),
-                recipient_address VARCHAR(42),
-                value NUMERIC(78, 0),
-                raw_args_json JSONB,
-                indexed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT unique_event_log UNIQUE (transaction_hash, log_index)
-            );
-            CREATE INDEX IF NOT EXISTS idx_events_contract_address ON events (contract_address);
-            CREATE INDEX IF NOT EXISTS idx_events_block_number ON events (block_number);
-            CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp);
-            CREATE INDEX IF NOT EXISTS idx_events_sender_address ON events (sender_address);
-            CREATE INDEX IF NOT EXISTS idx_events_recipient_address ON events (recipient_address);
-            CREATE INDEX IF NOT EXISTS idx_events_event_name ON events (event_name);
-        `;
-        await pool.query(query);
-    }
-
     static async upsert(eventData, options) {
         const { conflictFields, updateOnDuplicate } = options;
         const columns = Object.keys(eventData);

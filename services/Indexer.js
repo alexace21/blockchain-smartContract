@@ -1,4 +1,4 @@
-const { getProvider, getContract } = require('../config/initBlockchainConnection');
+const { getProvider, getContract, initializeBlockchainConnection } = require('../config/initBlockchainConnection');
 const IndexerState = require('../models/IndexerState'); // Mongoose model for indexer state
 const { Event } = require('../models/Event'); // PostgreSQL model for events
 const logger = require('../utils/logger'); // Simple logging utility

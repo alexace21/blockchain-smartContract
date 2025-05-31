@@ -107,6 +107,13 @@ class BlockchainController {
             const { address } = req.params;
             const userId = req.user._id.toString();
 
+            if (!this.isValidAddress(address)) {
+                return res.status(400).json({
+                    error: 'InvalidAddress',
+                    message: 'Invalid Ethereum address format'
+                });
+            }
+
             // Validate address
             if (!address || !address.match(/^0x[a-fA-F0-9]{40}$/)) {
                 return res.status(400).json({ 
@@ -114,12 +121,6 @@ class BlockchainController {
                 });
             }
 
-            if (!this.isValidAddress(address)) {
-                return res.status(400).json({
-                    error: 'InvalidAddress',
-                    message: 'Invalid Ethereum address format'
-                });
-            }
 
             const balanceData = await this.blockchainService.getBalance(address);
 

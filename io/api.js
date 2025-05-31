@@ -129,18 +129,7 @@ router.get('/eth/contracts/:address/events', validateSchema(eventsQuerySchema, '
  * @apiSuccess {Object[]} data Aggregated volume data.
  * @apiError (400) BadRequest Invalid parameters.
  */
-router.get('/eth/contracts/:address/volume', validateSchema(volumeQuerySchema, 'query'), checkContractAddress, async (req, res) => {
-    try {
-        const { interval, from, to } = req.query;
-        const contractAddress = req.params.address;
 
-        const volumeData = await Event.aggregateVolume(contractAddress, interval, from, to);
-        res.status(200).json(volumeData);
-    } catch (error) {
-        console.error('Error aggregating volume:', error);
-        res.status(500).json({ error: 'Failed to retrieve volume data' });
-    }
-});
 
 /**
  * @api {get} /api/eth/indexer/status Get Indexer Status
@@ -158,33 +147,33 @@ router.get('/eth/indexer/status', async (req, res) => {
 });
 
 
-// Transaction endpoints
-router.post('/addresses/:address/transactions',
-    transactionController.fetchAndStoreTransactions.bind(transactionController)
-);
+// // Transaction endpoints
+// router.post('/addresses/:address/transactions',
+//     transactionController.fetchAndStoreTransactions.bind(transactionController)
+// );
 
-router.get('/addresses/:address/transactions',
-    transactionController.getTransactions.bind(transactionController)
-);
+// router.get('/addresses/:address/transactions',
+//     transactionController.getTransactions.bind(transactionController)
+// );
 
-// Balance endpoints
-router.post('/addresses/:address/balance',
-    transactionController.fetchAndStoreBalance.bind(transactionController)
-);
+// // Balance endpoints
+// router.post('/addresses/:address/balance',
+//     transactionController.fetchAndStoreBalance.bind(transactionController)
+// );
 
-router.get('/addresses/:address/balance',
-    transactionController.getBalance.bind(transactionController)
-);
+// router.get('/addresses/:address/balance',
+//     transactionController.getBalance.bind(transactionController)
+// );
 
 // Page routes
-router.get('/wallet', protect, blockchainController.walletPage.bind(blockchainController));
-router.get('/transactions', protect, blockchainController.transactionsPage.bind(blockchainController));
+// router.get('/wallet', protect, blockchainController.walletPage.bind(blockchainController));
+// router.get('/transactions', protect, blockchainController.transactionsPage.bind(blockchainController));
 
 // API routes
-router.post('/wallet/add', protect, blockchainController.addWalletAddress.bind(blockchainController));
+// router.post('/wallet/add', protect, blockchainController.addWalletAddress.bind(blockchainController));
 router.get('/eth/address/:address/transactions', protect, blockchainController.fetchTransactions.bind(blockchainController));
 router.get('/eth/address/:address/balance', protect, blockchainController.fetchBalance.bind(blockchainController));
-router.get('/balances', protect, blockchainController.getBalances.bind(blockchainController));
+// router.get('/balances', protect, blockchainController.getBalances.bind(blockchainController));
 
 
 module.exports = router;

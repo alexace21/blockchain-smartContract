@@ -1,30 +1,56 @@
-const { Pool } = require('pg');
-const config = require('./environment'); // Import centralized config
+const { Pool } = require("pg");
+const config = require("./environment"); // Import centralized config
 
 const pool = new Pool({
-    host: config.postgres.host,
-    port: config.postgres.port,
-    user: config.postgres.user,
-    password: config.postgres.password,
-    database: config.postgres.database,
-    // Optional: Add a connection timeout
-    connectionTimeoutMillis: 5000, // 5 seconds
+  host: config.postgres.host,
+  port: config.postgres.port,
+  user: config.postgres.user,
+  password: config.postgres.password,
+  database: config.postgres.database,
+  // Optional: Add a connection timeout
+  connectionTimeoutMillis: 5000, // 5 seconds
 });
 
 // Test connection
-pool.on('connect', () => {
-    console.log('Connected to PostgreSQL database for blockchain data');
+pool.on("connect", () => {
+  console.log("Connected to PostgreSQL database for blockchain data");
 });
 
-pool.on('error', (err) => {
-    console.error('PostgreSQL connection error:', err);
+pool.on("error", (err) => {
+  console.error("PostgreSQL connection error:", err);
 });
 
 // Create tables if they don't exist
 const initBlockchainTables = async () => {
-    try {
-        // Create transactions table
-        await pool.query(`
+  try {
+    // Create events table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS events (
+                id SERIAL PRIMARY KEY,
+                contract_address VARCHAR(42) NOT NULL,
+                event_name VARCHAR(100) NOT NULL,
+                block_number BIGINT NOT NULL,
+                transaction_hash VARCHAR(66) NOT NULL,
+                log_index INT NOT NULL,
+                block_hash VARCHAR(66) NOT NULL,
+                timestamp BIGINT NOT NULL,
+                sender_address VARCHAR(42),
+                recipient_address VARCHAR(42),
+                value NUMERIC(78, 0),
+                raw_args_json JSONB,
+                indexed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT unique_event_log UNIQUE (transaction_hash, log_index)
+            );
+            CREATE INDEX IF NOT EXISTS idx_events_contract_address ON events (contract_address);
+            CREATE INDEX IF NOT EXISTS idx_events_block_number ON events (block_number);
+            CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp);
+            CREATE INDEX IF NOT EXISTS idx_events_sender_address ON events (sender_address);
+            CREATE INDEX IF NOT EXISTS idx_events_recipient_address ON events (recipient_address);
+            CREATE INDEX IF NOT EXISTS idx_events_event_name ON events (event_name);
+        `);
+
+    // Create transactions table
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS transactions (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(24),
@@ -45,8 +71,8 @@ const initBlockchainTables = async () => {
             );
         `);
 
-        // Create address_balances table
-        await pool.query(`
+    // Create address_balances table
+    await pool.query(`
             CREATE TABLE IF NOT EXISTS address_balances (
                 id SERIAL PRIMARY KEY,
                 user_id VARCHAR(24),
@@ -58,8 +84,8 @@ const initBlockchainTables = async () => {
             );
         `);
 
-        // Create indexes
-        await pool.query(`
+    // Create indexes
+    await pool.query(`
             CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
             CREATE INDEX IF NOT EXISTS idx_transactions_from_address ON transactions(from_address);
             CREATE INDEX IF NOT EXISTS idx_transactions_to_address ON transactions(to_address);
@@ -68,10 +94,10 @@ const initBlockchainTables = async () => {
             CREATE INDEX IF NOT EXISTS idx_address_balances_address ON address_balances(address);
         `);
 
-        console.log('Blockchain database tables initialized successfully');
-    } catch (error) {
-        console.error('Error initializing blockchain tables:', error);
-    }
+    console.log("Blockchain database tables initialized successfully");
+  } catch (error) {
+    console.error("Error initializing blockchain tables:", error);
+  }
 };
 
 module.exports = { pool, initBlockchainTables };

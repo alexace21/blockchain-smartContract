@@ -1,3 +1,5 @@
+const ethers = require('ethers');
+
 let provider = null;
 
 const initializeBlockchainConnection = async (contractAddress, abi) => {
