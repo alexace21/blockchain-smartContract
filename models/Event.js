@@ -1,4 +1,4 @@
-const pool = require('../config/blockchainDatabase');
+const pool = require('../config/postgreDatabase');
 // const config = require('../config');
 class Event {
     static async createTable() {

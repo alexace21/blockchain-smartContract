@@ -1,5 +1,5 @@
 const BlockchainService = require('../services/blockchainService');
-const pool = require('../config/database');
+const pool = require('../config/postgreDatabase');
 
 class TransactionController {
     constructor() {

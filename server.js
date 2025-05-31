@@ -1,13 +1,13 @@
 const app = require("./app");
-const { connectDB } = require("./config/database");
-const { initBlockchainTables } = require("./config/blockchainDatabase"); // New blockchain DB init
+const { connectMongoDB } = require("./config/mongoDatabase");
+const { initBlockchainTables } = require("./config/postgreDatabase"); // New blockchain DB init
 const {
   initializeBlockchainConnection,
 } = require("./config/initBlockchainConnection");
 const config = require("./config/environment");
 
 const startServer = async () => {
-  await connectDB(); // Connect to MongoDB
+  await connectMongoDB(); // Connect to MongoDB
 
   // Initialize both databases
   Promise.all([

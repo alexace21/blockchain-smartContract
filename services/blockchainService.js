@@ -3,7 +3,7 @@ const findByHash = require("../config/databaseOperations/findTransactionByHash")
 const { getProvider } = require("../config/initBlockchainConnection");
 
 const { ethers } = require('ethers');
-const {pool} = require("../config/blockchainDatabase");
+const {pool} = require("../config/postgreDatabase");
 const { log } = require("winston");
 
 class BlockchainService {

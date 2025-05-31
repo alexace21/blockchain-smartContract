@@ -1,4 +1,4 @@
-const {pool} = require('../blockchainDatabase')
+const {pool} = require('../postgreDatabase')
 
 /**
  * @param {string} txHash The transaction hash to check.

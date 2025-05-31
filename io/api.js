@@ -1,15 +1,10 @@
 const express = require('express');
 const TransactionController = require('../controllers/transactionController');
 const BlockchainController = require('../controllers/blockchainController');
-// const { isAuth, isGuest} = require('../middlewares/authMiddleware');
-const {COOKIE_SESSION_NAME} = require("../constants");
 const { startIndexer, stopIndexer, getIndexerStatus, CONTRACT_ADDRESS } = require('../services/Indexer');
 const { Event } = require('../models/Event');
 
 const {
-  registerUserValidation,
-  loginUserValidation,
-  refreshTokenValidation,
   validateSchema
 } = require('../middlewares/validator');
 

@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 const config = require('./environment');
 
-const connectDB = async (uri = config.mongoUri) => {
+const connectMongoDB = async (uri = config.mongoUri) => { // Renamed function
   try {
+    mongoose.set('strictQuery', true); // Suppress deprecation warning and set explicit behavior
     await mongoose.connect(uri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -15,7 +16,7 @@ const connectDB = async (uri = config.mongoUri) => {
   }
 };
 
-const disconnectDB = async () => {
+const disconnectMongoDB = async () => { // Renamed function
   try {
     await mongoose.disconnect();
     console.log('MongoDB Disconnected...');
@@ -24,4 +25,4 @@ const disconnectDB = async () => {
   }
 };
 
-module.exports = { connectDB, disconnectDB };
+module.exports = { connectMongoDB, disconnectMongoDB };

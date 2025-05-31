@@ -1,4 +1,4 @@
-const { pool } = require('../blockchainDatabase');
+const { pool } = require('../postgreDatabase');
 
 async function saveTransactionToDB(address, balance) {
     try {

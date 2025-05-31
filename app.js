@@ -5,7 +5,6 @@ const { NotFoundError } = require('./utils/appError');
 const { PORT } = require('./config/environment');
 const restAPI = require('./io/api'); // New blockchain routes
 const authAPI = require('./io/authAPI'); // New blockchain routes
-const { protect } = require('./middlewares/authMiddleware');
 
 const app = express();
 
@@ -13,7 +12,6 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 // Middlewares
 app.use(express.json()); // Body parser for JSON requests
-app.use(protect);
 app.use('/api', restAPI); // Mount blockchain routes
 // Routes
 app.use('/api/auth', authAPI);

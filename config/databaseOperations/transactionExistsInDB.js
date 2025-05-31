@@ -1,4 +1,4 @@
-const {pool} = require('../blockchainDatabase')
+const {pool} = require('../postgreDatabase')
 
 /**
  * Checks if a transaction hash already exists in the database.

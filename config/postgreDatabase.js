@@ -1,7 +1,15 @@
 const { Pool } = require('pg');
-const { POSTGRES_CONFIG } = require('./environment');
+const config = require('./environment'); // Import centralized config
 
-const pool = new Pool(POSTGRES_CONFIG);
+const pool = new Pool({
+    host: config.postgres.host,
+    port: config.postgres.port,
+    user: config.postgres.user,
+    password: config.postgres.password,
+    database: config.postgres.database,
+    // Optional: Add a connection timeout
+    connectionTimeoutMillis: 5000, // 5 seconds
+});
 
 // Test connection
 pool.on('connect', () => {
