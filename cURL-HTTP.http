@@ -1,0 +1,28 @@
+# Set your base URL, e.g., http://localhost:3000
+# CONTRACT_ADDRESS="0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9"
+
+# 1. Get Indexer Status
+curl http://localhost:3000/api/eth/indexer/status | jq .
+
+# 2. Start Indexing (replace with your contract address)
+curl -X POST http://localhost:3000/api/eth/contracts/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9/watch | jq .
+
+# 3. Query Events (replace with your contract address)
+# Get latest 5 Transfer events
+curl "http://localhost:3000/api/eth/contracts/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9/events?limit=5&eventName=Transfer" | jq .
+
+# Get events in a specific block range
+curl "http://localhost:3000/api/eth/contracts/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9/events?fromBlock=4000000&toBlock=4001000&limit=10" | jq .
+
+# Filter by sender
+curl "http://localhost:3000/api/eth/contracts/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9/events?sender=0xYOUR_SENDER_ADDRESS&limit=10" | jq .
+
+# 4. Stop Indexing (replace with your contract address)
+curl -X DELETE http://localhost:3000/api/eth/contracts/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9/watch | jq .
+
+# 5. Get Daily Volume (replace with your contract address, adjust timestamps as needed)
+# Example: last 7 days of daily volume
+# From & To are Unix timestamps (seconds)
+NOW=$(date +%s)
+ONE_WEEK_AGO=$((NOW - 7 * 24 * 60 * 60))
+curl "http://localhost:3000/api/eth/contracts/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9/volume?interval=daily&from=${ONE_WEEK_AGO}&to=${NOW}" | jq .
