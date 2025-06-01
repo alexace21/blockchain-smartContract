@@ -4,9 +4,9 @@ require('dotenv').config();
 module.exports = {
   port: process.env.PORT || 3005,
   mongoUri: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/limeChainAssessment',
-  postgres: { // New PostgreSQL config object
+  postgres: {
     host: process.env.POSTGRES_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_PORT, 10) || 5432, // Parse port as integer
+    port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,

@@ -1,9 +1,6 @@
 node_modules
-npm-debug.log
-.env
 .git
-Dockerfile
-docker-compose.yml
-.editorconfig
-.prettierrc
-*log
+.gitignore
+.env
+logs
+npm-debug.log*

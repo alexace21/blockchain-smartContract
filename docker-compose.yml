@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # Node.js Application Service
+  app:
+    # Use the Dockerfile in the current directory to build the image
+    build:
+      context: . # Build context is the current directory
+      dockerfile: Dockerfile
+    container_name: event-indexer-app
+    # Map host port 3005 to container port 3005
+    ports:
+      - "3005:3005"
+    # Mount the local project directory into the container.
+    # This is great for development as code changes reflect immediately (with nodemon).
+    # For production, remove this to use the built image's code.
+    volumes:
+      - .:/app
+      # Exclude node_modules from host mount to prevent inconsistencies
+      - /app/node_modules
+    # Load environment variables from .env file
+    env_file:
+      - ./.env
+    # Ensure app starts after databases are ready
+    depends_on:
+      - mongo
+      - postgres
+    # Set NODE_ENV for environment-specific logging and config
+    environment:
+      NODE_ENV: development # Set to production for production deployments
+      # Ensure your Express server port is read from env in your app.js/server.js
+      PORT: 3005 # Match the EXPOSE port in Dockerfile
+    # Command to run (overrides CMD in Dockerfile if specified, good for dev with nodemon)
+    # command: npm run dev # If you have a 'dev' script using nodemon
+
+  # MongoDB Service
+  mongo:
+    image: mongo:6.0 # Specify MongoDB version
+    container_name: event-indexer-mongo
+    ports:
+      - "27017:27017"
+    # Persist MongoDB data to a named volume
+    volumes:
+      - mongo_data:/data/db
+    env_file:
+      - ./.env # For MongoDB authentication (if you add MONGO_INITDB_ROOT_USERNAME/PASSWORD)
+    environment:
+      # These are for initial root user creation. Highly recommended for production.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+
+  # PostgreSQL Service
+  postgres:
+    image: postgres:15-alpine # Use a lightweight PostgreSQL image
+    container_name: event-indexer-postgres
+    ports:
+      - "5432:5432"
+    # Persist PostgreSQL data to a named volume
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env # For PostgreSQL credentials
+    environment:
+      POSTGRES_DB: ${PG_DATABASE}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+
+# Define named volumes for data persistence
+volumes:
+  mongo_data:
+  postgres_data:

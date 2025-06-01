@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const config = require('./environment');
 
-const connectMongoDB = async (uri = config.mongoUri) => { // Renamed function
+const connectMongoDB = async (uri = config.mongoUri) => { 
   try {
     mongoose.set('strictQuery', true); // Suppress deprecation warning and set explicit behavior
     await mongoose.connect(uri, {
@@ -16,7 +16,7 @@ const connectMongoDB = async (uri = config.mongoUri) => { // Renamed function
   }
 };
 
-const disconnectMongoDB = async () => { // Renamed function
+const disconnectMongoDB = async () => { 
   try {
     await mongoose.disconnect();
     console.log('MongoDB Disconnected...');

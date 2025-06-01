@@ -4,8 +4,18 @@ const { Event } = require('../models/Event'); // PostgreSQL model for events
 const logger = require('../utils/logger'); // Simple logging utility
 
 const CONTRACT_ADDRESS = '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9';
-const TRANSFER_EVENT_ABI = 'event Transfer(address indexed from, address indexed to, uint256 value)';
-const START_BLOCK = 1000000; // Replace with actual contract deployment block or desired start
+const TRANSFER_EVENT_ABI = [
+    {
+        "type": "event",
+        "name": "Transfer",
+        "inputs": [
+            {"name": "src", "type": "address", "indexed": true},
+            {"name": "dst", "type": "address", "indexed": true},
+            {"name": "wad", "type": "uint256", "indexed": false}
+        ]
+    }
+];
+const START_BLOCK = 4888290; // Replace with actual contract deployment block or desired start
 
 let isIndexing = false;
 let indexerLoopInterval;
@@ -17,18 +27,41 @@ async function getEventFilter(eventName) {
     if (!contract) {
         throw new Error("Contract not initialized for event filter.");
     }
-    // Ethers.js automatically handles event signature parsing for filters
-    const filter = contract.filters[eventName]();
-    if (!filter) {
-        // Fallback for events that might not have a direct filter property (e.g., if ABI is minimal)
-        // Or directly construct it if you know the topic
-        const topic = ethers.id(eventName + '(' + contract.interface.getEvent(eventName).inputs.map(i => i.type).join(',') + ')');
-        return {
-            address: contract.target,
-            topics: [topic]
-        };
+
+    // Get the event fragment from the contract's interface using the eventName
+    const eventFragment = contract.interface.getEvent(eventName);
+    if (!eventFragment) {
+        throw new Error(`Event "${eventName}" not found in contract ABI. Double check the event name and ABI.`);
     }
-    return filter;
+
+    // Ethers.js v6 now has topicHash directly on the event fragment
+    const topic = eventFragment.topicHash;
+
+    // Return the filter object
+    return {
+        address: contract.target, // In ethers v6, contract.address is now contract.target
+        topics: [topic]
+    };
+}
+
+
+function checkABI() {
+    const contract = getContract();
+    const transferEvent = contract.interface.fragments.find(
+        f => f.type === 'event' && f.name === 'Transfer'
+    );
+    
+    if (transferEvent) {
+        console.log('Transfer event found in ABI:', transferEvent);
+        console.log('Event signature:', transferEvent.format());
+    } else {
+        console.log('Transfer event NOT found in ABI');
+        console.log('Available events:', 
+            contract.interface.fragments
+                .filter(f => f.type === 'event')
+                .map(f => f.name)
+        );
+    }
 }
 
 async function processEvents(fromBlock, toBlock, eventName) {
@@ -41,17 +74,44 @@ async function processEvents(fromBlock, toBlock, eventName) {
     try {
         const filter = await getEventFilter(eventName);
         logger.info(`Querying events from block ${fromBlock} to ${toBlock} for event "${eventName}"`);
-        const events = await contract.queryFilter(filter, fromBlock, toBlock);
+        logger.debug(`Using filter: ${JSON.stringify(filter)}`); // Log the actual filter being sent
+ // NEW: Log the time taken for the RPC call
+        const rpcStartTime = Date.now();
+        const events = await contract.queryFilter(eventName, fromBlock, toBlock);
+        const rpcEndTime = Date.now();
+        logger.debug(`RPC queryFilter took ${rpcEndTime - rpcStartTime}ms and returned ${events.length} events.`);
 
+        logger.info(`Found ${events.length} "${eventName}" events in block range ${fromBlock}-${toBlock}`);
         if (events.length > 0) {
-            logger.info(`Found ${events.length} "${eventName}" events in block range ${fromBlock}-${toBlock}`);
-            for (const event of events) {
+           logger.debug(`Raw events from RPC: ${JSON.stringify(events.map(e => ({
+                blockNumber: e.blockNumber,
+                transactionHash: e.transactionHash,
+                logIndex: e.logIndex,
+                event: e.event, // Event name as identified by ethers.js (e.g., 'Transfer')
+                address: e.address,
+                topics: e.topics,
+                data: e.data
+            })))}`);
+                for (const event of events) {
                 try {
+                    logger.debug(`Processing event log: Block ${event.blockNumber}, Tx ${event.transactionHash}, LogIndex ${event.index}, Event Name: ${event.eventName}`);
+
                     const block = await event.getBlock();
                     const tx = await event.getTransaction();
 
                     // Parse event arguments using contract.interface
-                    const parsedArgs = contract.interface.parseLog(event);
+                    let parsedArgs; 
+                     try {
+                        parsedArgs = contract.interface.parseLog(event);
+                        if (!parsedArgs) {
+                            logger.warn(`Failed to parse log for event at Block ${event.blockNumber}, Tx ${event.transactionHash}. ` +
+                                        `This might mean the ABI is incorrect or log data is malformed. Skipping.`);
+                            continue;
+                        }
+                    } catch (parseError) {
+                        logger.error(`Error parsing event log for Block ${event.blockNumber}, Tx ${event.transactionHash}:`, parseError);
+                        continue; // Skip to next event if parsing fails
+                    }
 
                     const eventData = {
                         contract_address: event.address,
@@ -61,18 +121,19 @@ async function processEvents(fromBlock, toBlock, eventName) {
                         log_index: event.index,
                         timestamp: block.timestamp, // Unix timestamp
                         block_hash: event.blockHash, // Important for reorg checks if needed
-                        sender_address: parsedArgs.args.from, // Example for Transfer event
-                        recipient_address: parsedArgs.args.to, // Example for Transfer event
-                        value: parsedArgs.args.value.toString(), // Convert BigInt to string
-                        raw_args_json: parsedArgs.args // Store all args as JSONB
+                        sender_address: parsedArgs.args.src, // Example for Transfer event
+                        recipient_address: parsedArgs.args.dst, // Example for Transfer event
+                        value: parsedArgs.args.wad.toString(), // Convert BigInt to string
                     };
+                    logger.debug(`Attempting to save eventData: ${JSON.stringify(eventData)}`);
+
                     
                     // Upsert: Try to insert, if conflict (unique constraint on txHash, logIndex), update
                     await Event.upsert(eventData, {
                         conflictFields: ['transaction_hash', 'log_index'], // Define unique constraint in model
                         updateOnDuplicate: ['block_number', 'timestamp', 'raw_args_json', 'sender_address', 'recipient_address', 'value']
                     });
-                    logger.debug(`Indexed event: ${event.eventName} from block ${event.blockNumber}`);
+                    logger.debug(`Successfully indexed event: ${event.eventName} from block ${event.blockNumber} (Tx: ${event.transactionHash})`);
                 } catch (eventProcessError) {
                     logger.error(`Error processing single event ${event.transactionHash}-${event.logIndex}: ${eventProcessError.message}`);
                     // Decide whether to throw or continue. For robustness, usually continue and log.
@@ -98,7 +159,7 @@ let retryCount = 0;
 const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 5000; // 5 seconds initial delay
 
-async function runIndexer() {
+async function runIndexer(startBlock) {
     if (!isIndexing) {
         logger.info('Indexer stopped.');
         return;
@@ -113,7 +174,12 @@ async function runIndexer() {
     try {
         let state = await IndexerState.findById('globalIndexer');
         let currentBlock = await provider.getBlockNumber();
-        let fromBlock = state ? state.lastProcessedBlock + 1 : START_BLOCK;
+        let fromBlock;
+        if (startBlock) {
+            fromBlock = startBlock;
+        } else {
+            fromBlock = state ? state.lastProcessedBlock + 1 : START_BLOCK;
+        }
 
         if (fromBlock > currentBlock) {
             logger.info(`Indexer is caught up. Waiting for new blocks. Current: ${currentBlock}, Last Indexed: ${fromBlock - 1}`);
@@ -146,7 +212,30 @@ async function runIndexer() {
     }
 }
 
-async function startIndexer() {
+async function verifyContract() {
+    const contract = getContract();
+    const provider = getProvider();
+    
+    // Check if contract exists
+    const code = await provider.getCode(contract.target || contract.address);
+    console.log('Contract has code:', code !== '0x');
+    
+    // Try to call a view function if available
+    try {
+        if (contract.name) {
+            const name = await contract.name();
+            console.log('Token name:', name);
+        }
+        if (contract.symbol) {
+            const symbol = await contract.symbol();
+            console.log('Token symbol:', symbol);
+        }
+    } catch (error) {
+        console.log('Could not read contract details:', error.message);
+    }
+}
+
+async function startIndexer(address_contact, fromBlock) {
     if (isIndexing) {
         logger.warn('Indexer is already running.');
         return;
@@ -159,11 +248,12 @@ async function startIndexer() {
     } else {
         await IndexerState.create({ _id: 'globalIndexer', lastProcessedBlock: START_BLOCK -1, isRunning: true });
     }
+    verifyContract()
+    checkABI();
 
-    await initializeBlockchainConnection(CONTRACT_ADDRESS, [TRANSFER_EVENT_ABI]);
     logger.info('Starting indexer...');
     // Execute immediately and then on interval
-    await runIndexer();
+    await runIndexer(fromBlock);
     indexerLoopInterval = setInterval(runIndexer, POLL_INTERVAL_MS);
 }
 

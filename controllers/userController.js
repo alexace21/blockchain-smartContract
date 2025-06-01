@@ -7,7 +7,6 @@ const getMe = async (req, res, next) => {
     if (!req.user) {
       return next(new NotFoundError('User not found.'));
     }
-    // `toJSON` method on User model handles removing password
     res.status(200).json(req.user);
   } catch (error) {
     next(error);

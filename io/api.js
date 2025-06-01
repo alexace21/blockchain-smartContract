@@ -1,5 +1,4 @@
 const express = require('express');
-const TransactionController = require('../controllers/transactionController');
 const BlockchainController = require('../controllers/blockchainController');
 const { startIndexer, stopIndexer, getIndexerStatus, CONTRACT_ADDRESS } = require('../services/Indexer');
 const { Event } = require('../models/Event');
@@ -14,7 +13,6 @@ const { protect } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
 const blockchainController = new BlockchainController();
-const transactionController = new TransactionController();
 
 // Health check
 router.get('/health', (req, res) => {
@@ -40,11 +38,6 @@ const eventsQuerySchema = Joi.object({
     sortOrder: Joi.string().valid('ASC', 'DESC').default('DESC')
 });
 
-const volumeQuerySchema = Joi.object({
-    interval: Joi.string().valid('hourly', 'daily', 'monthly').default('daily'),
-    from: Joi.number().integer().min(0), // Unix timestamp
-    to: Joi.number().integer().min(0)    // Unix timestamp
-});
 
 
 // Middleware for checking if the contract address matches our configured one
@@ -62,9 +55,11 @@ const checkContractAddress = (req, res, next) => {
  * @apiSuccess {Object} message Success message.
  * @apiError (400) BadRequest Invalid contract address or indexer already running.
  */
-router.post('/eth/contracts/:address/watch', validateSchema(watchSchema, 'params'), checkContractAddress, async (req, res) => {
+router.post('/eth/contracts/:address/watch', protect, validateSchema(watchSchema, 'params'), checkContractAddress, async (req, res) => {
+    const { fromBlock } = req.body;
+    const address_contact = req.params.address;
     try {
-        await startIndexer();
+        await startIndexer(address_contact, fromBlock);
         res.status(202).json({ message: 'Indexing started successfully.' });
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -78,7 +73,7 @@ router.post('/eth/contracts/:address/watch', validateSchema(watchSchema, 'params
  * @apiSuccess {Object} message Success message.
  * @apiError (400) BadRequest Invalid contract address or indexer not running.
  */
-router.delete('/eth/contracts/:address/watch', validateSchema(watchSchema, 'params'), checkContractAddress, async (req, res) => {
+router.delete('/eth/contracts/:address/watch', protect, validateSchema(watchSchema, 'params'), checkContractAddress, async (req, res) => {
     try {
         await stopIndexer();
         res.status(200).json({ message: 'Indexing stopped successfully.' });
@@ -103,7 +98,7 @@ router.delete('/eth/contracts/:address/watch', validateSchema(watchSchema, 'para
  * @apiSuccess {Object[]} events List of indexed events.
  * @apiError (400) BadRequest Invalid parameters.
  */
-router.get('/eth/contracts/:address/events', validateSchema(eventsQuerySchema, 'query'), checkContractAddress, async (req, res) => {
+router.get('/eth/contracts/:address/events', protect, validateSchema(eventsQuerySchema, 'query'), checkContractAddress, async (req, res) => {
     try {
         const { fromBlock, toBlock, eventName, sender, recipient, limit, offset, sortBy, sortOrder } = req.query;
         const contractAddress = req.params.address;
@@ -136,7 +131,7 @@ router.get('/eth/contracts/:address/events', validateSchema(eventsQuerySchema, '
  * @apiDescription Retrieves the current status of the event indexer.
  * @apiSuccess {Object} status Indexer status including running state, last processed block, and chain tip.
  */
-router.get('/eth/indexer/status', async (req, res) => {
+router.get('/eth/indexer/status', protect, async (req, res) => {
     try {
         const status = await getIndexerStatus();
         res.status(200).json(status);
@@ -146,34 +141,7 @@ router.get('/eth/indexer/status', async (req, res) => {
     }
 });
 
-
-// // Transaction endpoints
-// router.post('/addresses/:address/transactions',
-//     transactionController.fetchAndStoreTransactions.bind(transactionController)
-// );
-
-// router.get('/addresses/:address/transactions',
-//     transactionController.getTransactions.bind(transactionController)
-// );
-
-// // Balance endpoints
-// router.post('/addresses/:address/balance',
-//     transactionController.fetchAndStoreBalance.bind(transactionController)
-// );
-
-// router.get('/addresses/:address/balance',
-//     transactionController.getBalance.bind(transactionController)
-// );
-
-// Page routes
-// router.get('/wallet', protect, blockchainController.walletPage.bind(blockchainController));
-// router.get('/transactions', protect, blockchainController.transactionsPage.bind(blockchainController));
-
-// API routes
-// router.post('/wallet/add', protect, blockchainController.addWalletAddress.bind(blockchainController));
 router.get('/eth/address/:address/transactions', protect, blockchainController.fetchTransactions.bind(blockchainController));
 router.get('/eth/address/:address/balance', protect, blockchainController.fetchBalance.bind(blockchainController));
-// router.get('/balances', protect, blockchainController.getBalances.bind(blockchainController));
-
 
 module.exports = router;
