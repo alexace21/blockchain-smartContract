@@ -56,11 +56,17 @@ const checkContractAddress = (req, res, next) => {
  * @apiError (400) BadRequest Invalid contract address or indexer already running.
  */
 router.post('/eth/contracts/:address/watch', protect, validateSchema(watchSchema, 'params'), checkContractAddress, async (req, res) => {
-    const { fromBlock } = req.body;
+    const { fromBlock, eventSignature } = req.body;
     const address_contact = req.params.address;
+
+        // Basic validation for eventSignature
+    if (!eventSignature || typeof eventSignature !== 'string') {
+        return res.status(400).json({ error: 'eventSignature is required and must be a string.' });
+    }
     try {
-        await startIndexer(address_contact, fromBlock);
-        res.status(202).json({ message: 'Indexing started successfully.' });
+        const responseData = await startIndexer(address_contact, fromBlock, eventSignature);
+
+        return res.status(200).json(responseData);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const IndexerStateSchema = new mongoose.Schema({
     _id: { type: String, default: 'globalIndexer' }, // Use a fixed ID for the single indexer state
     lastProcessedBlock: { type: Number, required: true, default: 0 },
+    contractAddress: { type: String, required: true, default: "" },
+    eventSignature: { type: String, required: true, default: "" },
     isRunning: { type: Boolean, required: true, default: false },
     errorCount: { type: Number, default: 0 },
     lastError: { type: String },

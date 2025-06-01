@@ -1,5 +1,4 @@
 const BlockchainService = require('../services/blockchainService');
-const User = require('../models/User');
 const {ethers} = require("ethers");
 
 class BlockchainController {
@@ -89,6 +88,7 @@ class BlockchainController {
             return res.status(500).json({ error: 'ServerError', message: 'Failed to fetch balance' });
         }
     }
+
 }
 
 module.exports = BlockchainController;

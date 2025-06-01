@@ -1,27 +1,16 @@
-const { getProvider, getContract, initializeBlockchainConnection } = require('../config/initBlockchainConnection');
+const { getProvider, getContract, getContractABI } = require('../config/initBlockchainConnection');
 const IndexerState = require('../models/IndexerState'); // Mongoose model for indexer state
 const { Event } = require('../models/Event'); // PostgreSQL model for events
 const logger = require('../utils/logger'); // Simple logging utility
 
 const CONTRACT_ADDRESS = '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9';
-const TRANSFER_EVENT_ABI = [
-    {
-        "type": "event",
-        "name": "Transfer",
-        "inputs": [
-            {"name": "src", "type": "address", "indexed": true},
-            {"name": "dst", "type": "address", "indexed": true},
-            {"name": "wad", "type": "uint256", "indexed": false}
-        ]
-    }
-];
 const START_BLOCK = 4888290; // Replace with actual contract deployment block or desired start
 
 let isIndexing = false;
 let indexerLoopInterval;
 const POLL_INTERVAL_MS = 5000; // Poll every 5 seconds
 const BLOCK_CHUNK_SIZE = 2000; // Process 2000 blocks at a time
-
+let currentWatchConfig = null;
 async function getEventFilter(eventName) {
     const contract = getContract();
     if (!contract) {
@@ -235,7 +224,13 @@ async function verifyContract() {
     }
 }
 
-async function startIndexer(address_contact, fromBlock) {
+async function startIndexer(address_contact, fromBlock, eventSignature) {
+        this.currentWatchConfig = {
+        contractAddress: address_contact,
+        eventSignature: eventSignature,
+        contractABI: getContractABI, // Store the ABI here
+        lastKnownBlock: null, // Will be updated by runIndexer/updateIndexerState
+    };
     if (isIndexing) {
         logger.warn('Indexer is already running.');
         return;
@@ -244,17 +239,28 @@ async function startIndexer(address_contact, fromBlock) {
     let state = await IndexerState.findById('globalIndexer');
     if (state) {
         state.isRunning = true;
+        state.contractAddress = address_contact; // Update state with current contract
+        state.eventSignature = eventSignature;   // Update state with current event
         await state.save();
     } else {
-        await IndexerState.create({ _id: 'globalIndexer', lastProcessedBlock: START_BLOCK -1, isRunning: true });
+        await IndexerState.create({ _id: 'globalIndexer', lastProcessedBlock: START_BLOCK -1, isRunning: true, contractAddress: address_contact,
+            eventSignature: eventSignature });
     }
     verifyContract()
     checkABI();
 
     logger.info('Starting indexer...');
     // Execute immediately and then on interval
-    await runIndexer(fromBlock);
+    runIndexer(fromBlock);
     indexerLoopInterval = setInterval(runIndexer, POLL_INTERVAL_MS);
+
+        // Return immediately to the client that the process has started
+    return {
+        status: "started",
+        contractAddress: address_contact,
+        eventSignature: eventSignature,
+        startBlock: fromBlock || (state ? state.lastProcessedBlock + 1 : START_BLOCK)
+    };
 }
 
 async function stopIndexer() {

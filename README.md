@@ -1,412 +1,159 @@
-# AI BE Task for Junior, Mid, and Senior
+# Blockchain Explorer & User Management API
 
-## Before you begin
+A robust Node.js backend API designed for user management, authentication, and interaction with blockchain data. This project features secure authentication with JWT and refresh tokens, comprehensive user profile management, and a module to fetch and index blockchain transactional and balance data.
 
-### Guide to Using AI for Assistance
+## Features
 
-In this assessment, you're encouraged to utilize ChatGPT, GitHub Copilot, and other AI tools to help you complete the task. Whether it's architecting solutions, solving coding challenges, or understanding new concepts, AI can be a powerful tool. We're interested not just in the end result but also in how you use AI to tackle challenges, so please don't forget to submit your full prompt as well!
+*   **User Authentication:**
+    *   User Registration, Login, and Logout.
+    *   JWT-based Access Tokens for secure API access.
+    *   Refresh Tokens for seamless token renewal.
+    *   Secure password hashing using `bcryptjs`.
+*   **User Management:**
+    *   Retrieve authenticated user's profile (`/me`).
+    *   Update user profile (username, email).
+    *   Change user password securely.
+*   **Blockchain Integration:**
+    *   Fetch transactions for a given Ethereum address.
+    *   Fetch current balance for a given Ethereum address.
+    *   Blockchain Indexer to continuously process and store blockchain data (e.g., blocks, transactions, states).
+*   **Data Validation:** Comprehensive input validation using `Joi` schemas.
+*   **Centralized Error Handling:** Consistent error responses across the API.
+*   **Structured Logging:** Utilizes `Winston` for application logging.
+*   **Dual Database Support:** Interacts with both MongoDB (for user/token data) and PostgreSQL (potentially for indexed blockchain data or other relational data).
 
-### Submission Requirements:
+## Technologies Used
 
-#### Your Repository: The repository should include:
+*   **Backend:** Node.js, Express.js
+*   **Databases:**
+    *   MongoDB (with Mongoose ORM)
+    *   PostgreSQL (with `pg` driver)
+*   **Authentication & Security:**
+    *   JSON Web Tokens (JWT)
+    *   Bcryptjs (Password Hashing)
+    *   Helmet (Security Headers)
+    *   CORS (Cross-Origin Resource Sharing)
+*   **Blockchain:**
+    *   Ethers.js (Ethereum interaction)
+*   **Validation:** Joi
+*   **Logging:** Winston, Winston Daily Rotate File
+*   **Environment Management:** Dotenv
+*   **Development & Testing:**
+    *   Jest (Unit Testing Framework)
 
-- Production-Ready Code: Make sure the project is fully functional and optimized for production use.
-- README File: Provide a README file that explains your work, how to install and run the project, any architecture decisions you made, and how to run it.
-- Docker Configuration: Include all necessary Docker files and docker-compose configurations.
-- API Documentation: Comprehensive API documentation using OpenAPI/Swagger.
-- Best Practices: Structure the repository with appropriate folder organization, linting configurations, and any other best practices for a professional project.
+## Project Structure
 
-### Full AI Prompt Export:
+The project follows a modular and layered architecture:
+├── config/ # Environment variables, database connections
+├── controllers/ # Handles incoming requests, orchestrates service calls
+├── middlewares/ # Express middleware (auth, error handling, validation)
+├── models/ # Mongoose schemas for MongoDB data
+├── api/ # Express routes definitions
+├── services/ # Core business logic and database interactions
+├── utils/ # Utility functions (AppError, JWT, password hashing, Joi validation)
+├── tests/ # Unit tests for various modules
+└── package.json
+└── README.md
+└── .env.example
 
-Please attach the full AI prompts in a single text file (ai_prompts.txt) or Markdown file (ai_prompts.md).
 
-#### Note: We encourage you to approach this as you would a real-world project task.
 
-## Let's go:
+## Getting Started
 
-### Building a Scalable Backend Service with Blockchain Integration
+### Prerequisites
 
-### Core Task (Junior Level): Build Authentication and User Management System
+*   Node.js (LTS version recommended)
+*   npm or Yarn (package manager)
+*   MongoDB instance (local or cloud)
+*   PostgreSQL instance (local or cloud)
 
-**Objective**: Create a containerized backend service handling user authentication and basic CRUD operations.
+### Installation
 
-**Features**:
+1.  **Clone the repository:**
+    ```bash
+    git clone <your-repository-url>
+    cd your-project-name
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+3.  **Environment Variables:**
+    Create a `.env` file in the root of your project based on `.env.example`.
+    ```env
+    # .env example
+    PORT=3005 || 3000
 
-- User registration and authentication using JWT
-- Password hashing and security best practices
-- Basic user profile management
-- Input validation and error handling
+    # MongoDB
+    MONGO_URI=mongodb://localhost:27017/your_db_name
 
-**Technical Requirements**:
+    # PostgreSQL
+    PG_USER=your_pg_user
+    PG_HOST=localhost
+    PG_DATABASE=your_pg_db
+    PG_PASSWORD=your_pg_password
+    PG_PORT=5432
 
-- Use Node.js/Express.js or similar framework
-- PostgreSQL or MongoDB for data storage
-- Docker and docker-compose setup
-- Basic unit tests
-- Environment configuration management
+    # JWT Secrets (Use strong, random values for production!)
+    JWT_ACCESS_SECRET=your_jwt_access_secret_key
+    JWT_ACCESS_EXPIRATION=1h
+    JWT_REFRESH_SECRET=your_jwt_refresh_secret_key
+    JWT_REFRESH_EXPIRATION=7d
 
-**Assessment Focus**:
+    # Other configurations as needed
+    # ...
+    ```
+    Ensure you fill in your actual database credentials and strong secret keys.
 
-- API design
-- Security implementation
-- Docker configuration
-- Database schema design
-- Error handling patterns
+### Running the Application
 
-### Additional Task for Mid-Level: Transaction Data Processing
+To start the development server:
+```bash
+npm start
+# or
+node server.js # (assuming your main entry file is index.js)
 
-**Objective**: Add a single chain (Ethereum Sepolia) transaction processing system.
+Running Tests
+This project uses Jest for unit testing.
 
-**Features**:
+Run all tests:
+npm test
 
-- Fetch and store transactions for a given address by providing block from/block to as optional query string params
-  - [0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9](https://sepolia.etherscan.io/address/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9) - address for transaction retrieval
-  - if block from is not specified take the creation block of the contract or block 0 if EOA
-  - if block to is not specified take latest block
-- Fetch and store native currency balance of an address
-- REST API endpoints for transaction data
 
-**Technical Requirements**:
+Run tests in watch mode (reruns on file changes):
+npm run test:watch
 
-- Ethers.js for blockchain interaction
-- PostgreSQL or MongoDB for transaction and balance storage
-- Basic error handling
-- Unit tests for core functionality
+Generate code coverage report:
+npm run test:coverage
 
-**Assessment Focus**:
+API Endpoints:
+This is a partial list of exposed API endpoints. Refer to the api.js file for full definitions.
 
-- Blockchain data handling
-- API design
-- Error handling patterns
+Environment: 
+GET /api/health: Get health information about Project whether running or not.
 
-### Additional Task for Senior Level: Smart Contract Event Indexer
+Authentication (/api/auth)
+POST /api/auth/register: Register a new user.
+POST /api/auth/login: Authenticate a user and receive tokens.
+POST /api/auth/refresh: Refresh access token using a refresh token.
+POST /api/auth/logout: Invalidate refresh token(s).
 
-**Objective**: Build a focused event indexer for a specific smart contract.
+User Management (/api/users)
+GET /api/users/me: Get authenticated user's profile. (Requires access token)
+PUT /api/users/me: Update authenticated user's profile (username, email). (Requires access token)
+PUT /api/users/me/password: Change authenticated user's password. (Requires access token)
 
-**Features**:
-
-- Index events from a single smart contract
-  - [0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9](https://sepolia.etherscan.io/address/0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9) - contract address for event retrieval
-- Store events in the database
-- Ability to continue indexing from where the application last stopped upon subsequent start
-- Ability to get all stored events
-- Ability to stop indexing events
-- Provide REST API for querying events
-- Basic aggregation endpoints (e.g., volume over time)
-
-**Technical Requirements**:
-
-- Ethers.js for event listening
-- PostgreSQL or MongoDB for event storage
-- Basic error handling and retry logic
-- Unit tests
-
-**Assessment Focus**:
-
-- Event processing implementation
-- Database schema design
-- API performance
-- Error handling
-
-### Bonus Points:
-
-- Implementing proper logging and monitoring
-- Adding CI/CD pipeline configuration
-- Adding API versioning strategy
-- Adding rate limiting
-- Adding caching
-- Adding pagination for transaction/event GET
-
-# Authentication API Endpoints
-
-## Authentication
-
-### POST /api/auth/register
-
-Register a new user
-
-```json
+Blockchain (/api/blockchain)
+GET /api/eth/indexer/status: Get Indexer status and additional actual information.
+GET /api/eth/address/:addressId/transactions: Fetch blockchain transactions for a specific address. (Requires access token)
+GET /api/eth/address/:addressId/balance: Fetch current Ethereum balance for a specific address. (Requires access token)
+GET /api/eth/contracts/:addressId/events: Fetch all stored events from Database. (Requires access token)
+DELETE /api/eth/contracts/:addressId/watch: Updates MongoDB model IndexerState's state and stops indexing smart contract. (Requires access token)
+POST /api/eth/contracts/:addressId/watch: Updates MongoDB model IndexerState's state and starts indexing smart contract + store events. (Requires access token)
+Example body:
 {
-  "email": "string",
-  "password": "string",
-  "username": "string"
+      "eventSignature": "Transfer(address,address,uint256)"
+  //"fromBlock": 21499999  // optional
 }
-```
-
-Response: 201 Created
-
-```json
-{
-  "id": "uuid",
-  "email": "string",
-  "username": "string",
-  "createdAt": "timestamp"
-}
-```
-
-### POST /api/auth/login
-
-Login with credentials
-
-```json
-{
-  "email": "string",
-  "password": "string"
-}
-```
-
-Response: 200 OK
-
-```json
-{
-  "accessToken": "jwt_token",
-  "refreshToken": "refresh_token",
-  "expiresIn": 3600
-}
-```
-
-### POST /api/auth/refresh
-
-Refresh access token
-
-```json
-{
-  "refreshToken": "string"
-}
-```
-
-Response: 200 OK
-
-```json
-{
-  "accessToken": "jwt_token",
-  "expiresIn": 3600
-}
-```
-
-### POST /api/auth/logout
-
-Logout user (invalidate tokens)
-Headers: Authorization: Bearer {token}
-Response: 204 No Content
-
-## User Profile
-
-### GET /api/users/me
-
-Get current user profile
-Headers: Authorization: Bearer {token}
-Response: 200 OK
-
-```json
-{
-  "id": "uuid",
-  "email": "string",
-  "username": "string",
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
-}
-```
-
-### PUT /api/users/me
-
-Update user profile
-Headers: Authorization: Bearer {token}
-
-```json
-{
-  "username": "string",
-  "email": "string"
-}
-```
-
-Response: 200 OK
-
-```json
-{
-  "id": "uuid",
-  "email": "string",
-  "username": "string",
-  "updatedAt": "timestamp"
-}
-```
-
-### PUT /api/users/me/password
-
-Change password
-Headers: Authorization: Bearer {token}
-
-```json
-{
-  "currentPassword": "string",
-  "newPassword": "string"
-}
-```
-
-Response: 204 No Content
-
-## Error Responses
-
-### 400 Bad Request
-
-```json
-{
-  "error": "string",
-  "message": "string",
-  "details": {}
-}
-```
-
-### 401 Unauthorized
-
-```json
-{
-  "error": "Unauthorized",
-  "message": "Invalid credentials"
-}
-```
-
-### 403 Forbidden
-
-```json
-{
-  "error": "Forbidden",
-  "message": "Insufficient permissions"
-}
-```
-
-# Blockchain Transaction API Endpoints
-
-## Transaction Data
-
-### GET /api/eth/address/:address/transactions
-
-Query Parameters:
-
-- fromBlock (optional): Starting block number
-- toBlock (optional): Ending block number (defaults to 'latest')
-
-Get transactions for address
-
-```json
-Response 200:
-{
-  "transactions": [
-    ...
-  ],
-}
-
-```
-
-### GET /api/eth/address/:address/balance
-
-Get current balance
-
-```json
-Response 200:
-{
-  "address": "0x...",
-  "balance": "1.5",
-  "balanceWei": "1500000000000000000",
-  "lastUpdated": "2024-02-10T12:00:00Z"
-}
-
-```
-
-## Error Responses
-
-### 400 Bad Request
-
-```json
-{
-  "error": "InvalidAddress",
-  "message": "Invalid Ethereum address format"
-}
-```
-
-# Event Indexer API Endpoints
-
-### POST /api/eth/contracts/:address/watch
-
-Start indexing contract events
-
-```json
-Request:
-{
-  "eventSignature": "Transfer(address,address,uint256)",
-  "fromBlock": 12345678  // optional
-}
-
-Response 200:
-{
-  "status": "started",
-  "contractAddress": "0x...",
-  "eventSignature": "Transfer(address,address,uint256)",
-  "startBlock": 12345678
-}
-
-```
-
-### GET /api/eth/contracts/:address/events
-
-Get indexed events
-
-```json
-Query Parameters:
-- fromBlock (optional): number
-- toBlock (optional): number
-
-Response 200:
-{
-  "events": [
-    {
-      "blockNumber": 12345678,
-      "transactionHash": "0x...",
-      "data": {
-        "from": "0x...",
-        "to": "0x...",
-        "value": "1000000000000000000"
-      },
-      "timestamp": "2024-02-10T12:00:00Z"
-    }
-  ],
-  "indexerStatus": {
-    "lastIndexedBlock": 12345678,
-    "isIndexing": true
-  },
-}
-
-```
-
-### DELETE /api/eth/contracts/:address/watch
-
-Stop indexing contract events
-
-```json
-Response 200:
-{
-  "status": "stopped",
-  "lastIndexedBlock": 12345678
-}
-
-```
-
-### Error Responses
-
-400 Bad Request
-
-```json
-{
-  "error": "InvalidSignature",
-  "message": "Invalid event signature format"
-}
-```
-
-404 Not Found
-
-```json
-{
-  "error": "ContractNotFound",
-  "message": "Contract not found or not being indexed"
-}
-```

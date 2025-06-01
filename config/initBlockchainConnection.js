@@ -2,6 +2,7 @@ const ethers = require('ethers');
 
 let provider = null;
 let contract = null;
+let contract_abi = null;
 
 const initializeBlockchainConnection = async (contractAddress, abi) => {
     try {
@@ -24,19 +25,7 @@ const initializeBlockchainConnection = async (contractAddress, abi) => {
         }
         console.log('Contract code verified - contract exists on chain');
         
-        // Optional: Try to read contract name/symbol if it's an ERC20
-        try {
-            if (contract.name) {
-                const name = await contract.name();
-                console.log('Contract name:', name);
-            }
-            if (contract.symbol) {
-                const symbol = await contract.symbol();
-                console.log('Contract symbol:', symbol);
-            }
-        } catch (e) {
-            console.log('Could not read contract metadata (this is normal for some contracts)');
-        }
+        contract_abi = abi;
 
     } catch (error) {
         console.error('Failed to initialize blockchain connection:', error.message);
@@ -46,6 +35,7 @@ const initializeBlockchainConnection = async (contractAddress, abi) => {
 
 const getProvider = () => provider;
 const getContract = () => contract;
+const getContractABI = () => contract_abi;
 
 module.exports = {
     initializeBlockchainConnection,

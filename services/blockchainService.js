@@ -95,9 +95,8 @@ class BlockchainService {
 
                 if (block && block.transactions) {
                     for (const tx of block.transactions) {
-                        // Uncomment for PRODUCTION USE
-                        // if (tx.from && (tx.from.toLowerCase() === address.toLowerCase() ||
-                        //     (tx.to && tx.to.toLowerCase() === address.toLowerCase()))) {
+                        if (tx.from && (tx.from.toLowerCase() === address.toLowerCase() ||
+                            (tx.to && tx.to.toLowerCase() === address.toLowerCase()))) {
                             if (storedTransactions.length >= this.DEFAULT_TRANSACTIONS_LIMIT) {
                                 break ; // We have collected enough new transactions
                             }
@@ -114,6 +113,7 @@ class BlockchainService {
 
                             storedTransactions.push(await findByHash(tx.hash));
                     }
+                }
                 }
             } catch (err) {
                 console.warn(`Error fetching block ${i}:`, err.message);

@@ -1,5 +1,4 @@
 const {pool} = require('../config/postgreDatabase');
-// const config = require('../config');
 class Event {
     static async upsert(eventData, options) {
         const { conflictFields, updateOnDuplicate } = options;
